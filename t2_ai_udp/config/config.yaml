@@ -1,0 +1,50 @@
+# === CONFIGURACIÓN PRINCIPAL ===
+dataset_path: "../data/ai4i2020.csv"   # <-- Cambia a la ruta real del CSV descargado
+target_column: "Failure Type"        # <-- Cambia si tu columna Y tiene otro nombre
+drop_columns: ["UDI","Product ID","Machine failure","TWF","HDF","PWF","OSF","RNF"]      # <-- Ajusta si existe una columna ID (o déjalo vacío: [])
+categorical_columns: ["Type"]        # <-- Ajusta según las columnas categóricas reales; puede ser []
+
+test_size: 0.2
+random_state: 42
+
+# === CONFIGURACIÓN DE CLUSTERING ===
+clustering:
+  score_metric: "silhouette"   # opciones: silhouette o davies_bouldin
+
+  kmeans:
+    configs:
+      - {name: "km_rand_k3", n_clusters: 3, init: "random", n_init: 20, max_iter: 300}
+      - {name: "km_rand_k5", n_clusters: 5, init: "random", n_init: 20, max_iter: 300}
+      - {name: "km_pp_k3",   n_clusters: 3, init: "k-means++", n_init: 20, max_iter: 300}
+      - {name: "km_pp_k5",   n_clusters: 5, init: "k-means++", n_init: 20, max_iter: 300}
+
+  meanshift:
+    configs:
+      # Si bandwidth es null, se estimará con estimate_bandwidth usando quantile
+      - {name: "ms_q_0.20", quantile: 0.20, n_samples: 10000, bin_seeding: true, bandwidth: null}
+      - {name: "ms_q_0.30", quantile: 0.30, n_samples: 10000, bin_seeding: true, bandwidth: null}
+      - {name: "ms_q_0.10", quantile: 0.10, n_samples: 10000, bin_seeding: true, bandwidth: null}
+      - {name: "ms_bw_1.0", quantile: null, n_samples: 10000, bin_seeding: true, bandwidth: 1.0}
+
+# === CONFIGURACIÓN SUPERVISADA (entrenamiento con eliminación) ===
+supervised:
+  n_epochs: 25
+  eval_every_epochs: 5
+  batch_size: 512
+  metric: "f1_macro"   # métricas posibles: accuracy, f1_macro
+
+  logistic:
+    # Usaremos SGDClassifier(loss='log_loss') para permitir entrenamiento por épocas (partial_fit)
+    configs:
+      - {name: "log_optimal_a1e-4", alpha: 0.0001, learning_rate: "optimal"}
+      - {name: "log_inv_a1e-3",     alpha: 0.001,  learning_rate: "invscaling", eta0: 0.01, power_t: 0.5}
+      - {name: "log_adapt_a5e-4",   alpha: 0.0005, learning_rate: "adaptive",   eta0: 0.01}
+      - {name: "log_optimal_a5e-5", alpha: 0.00005, learning_rate: "optimal"}
+
+  svm:
+    # Usaremos SGDClassifier con loss='hinge' o 'modified_huber' como SVM lineal
+    configs:
+      - {name: "svm_hinge_opt_a1e-4",   alpha: 0.0001,  learning_rate: "optimal",        loss: "hinge"}
+      - {name: "svm_hinge_inv_a1e-3",   alpha: 0.001,   learning_rate: "invscaling",     eta0: 0.01, power_t: 0.5, loss: "hinge"}
+      - {name: "svm_hinge_adp_a5e-4",   alpha: 0.0005,  learning_rate: "adaptive",       eta0: 0.01, loss: "hinge"}
+      - {name: "svm_modhub_opt_a1e-4",  alpha: 0.0001,  learning_rate: "optimal",        loss: "modified_huber"}
