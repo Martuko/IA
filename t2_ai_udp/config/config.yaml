@@ -13,10 +13,16 @@ clustering:
 
   kmeans:
     configs:
-      - {name: "km_rand_k3", n_clusters: 3, init: "random", n_init: 20, max_iter: 300}
-      - {name: "km_rand_k5", n_clusters: 5, init: "random", n_init: 20, max_iter: 300}
-      - {name: "km_pp_k3",   n_clusters: 3, init: "k-means++", n_init: 20, max_iter: 300}
-      - {name: "km_pp_k5",   n_clusters: 5, init: "k-means++", n_init: 20, max_iter: 300}
+      - {name: "km_rand_k2", n_clusters: 2, init: "random",     n_init: 20, max_iter: 300}
+      - {name: "km_rand_k3", n_clusters: 3, init: "random",     n_init: 20, max_iter: 300}
+      - {name: "km_rand_k5", n_clusters: 5, init: "random",     n_init: 20, max_iter: 300}
+      - {name: "km_rand_k8", n_clusters: 8, init: "random",     n_init: 20, max_iter: 300}
+
+      - {name: "km_pp_k3",   n_clusters: 3, init: "k-means++",  n_init: 20, max_iter: 300}
+      - {name: "km_pp_k4",   n_clusters: 4, init: "k-means++",  n_init: 20, max_iter: 300}
+      - {name: "km_pp_k5",   n_clusters: 5, init: "k-means++",  n_init: 20, max_iter: 300}
+      - {name: "km_pp_k6",   n_clusters: 6, init: "k-means++",  n_init: 20, max_iter: 300}
+
 
   meanshift:
     configs:
@@ -28,23 +34,28 @@ clustering:
 
 # === CONFIGURACIÓN SUPERVISADA (entrenamiento con eliminación) ===
 supervised:
-  n_epochs: 25
+  n_epochs: 50
   eval_every_epochs: 5
   batch_size: 512
-  metric: "f1_macro"   # métricas posibles: accuracy, f1_macro
+  metric: "f1_macro"
+
+  # clave:
+  use_sample_weights: true
+  balanced_minibatches: false     # <— apágalo
+  class_weight_gamma: 0.6         # <— NUEVO: templa los pesos (0=no pesa, 1=full balanced)
 
   logistic:
-    # Usaremos SGDClassifier(loss='log_loss') para permitir entrenamiento por épocas (partial_fit)
     configs:
-      - {name: "log_optimal_a1e-4", alpha: 0.0001, learning_rate: "optimal"}
-      - {name: "log_inv_a1e-3",     alpha: 0.001,  learning_rate: "invscaling", eta0: 0.01, power_t: 0.5}
-      - {name: "log_adapt_a5e-4",   alpha: 0.0005, learning_rate: "adaptive",   eta0: 0.01}
-      - {name: "log_optimal_a5e-5", alpha: 0.00005, learning_rate: "optimal"}
+      - {name: "log_optimal_a1e-4",          alpha: 1.0e-4, learning_rate: "optimal"}
+      - {name: "log_optimal_a5e-5",          alpha: 5.0e-5, learning_rate: "optimal"}
+      - {name: "log_adapt_eta005_a5e-4",     alpha: 5.0e-4, learning_rate: "adaptive",   eta0: 0.05}
+      - {name: "log_adapt_eta001_a1e-4",     alpha: 1.0e-4, learning_rate: "adaptive",   eta0: 0.01}
 
   svm:
-    # Usaremos SGDClassifier con loss='hinge' o 'modified_huber' como SVM lineal
     configs:
-      - {name: "svm_hinge_opt_a1e-4",   alpha: 0.0001,  learning_rate: "optimal",        loss: "hinge"}
-      - {name: "svm_hinge_inv_a1e-3",   alpha: 0.001,   learning_rate: "invscaling",     eta0: 0.01, power_t: 0.5, loss: "hinge"}
-      - {name: "svm_hinge_adp_a5e-4",   alpha: 0.0005,  learning_rate: "adaptive",       eta0: 0.01, loss: "hinge"}
-      - {name: "svm_modhub_opt_a1e-4",  alpha: 0.0001,  learning_rate: "optimal",        loss: "modified_huber"}
+      - {name: "svm_modhub_opt_a1e-4",       alpha: 1.0e-4, learning_rate: "optimal",  loss: "modified_huber"}
+      - {name: "svm_hinge_opt_a1e-4",        alpha: 1.0e-4, learning_rate: "optimal",  loss: "hinge"}
+      - {name: "svm_modhub_adp_eta005_a5e-4",alpha: 5.0e-4, learning_rate: "adaptive", eta0: 0.05, loss: "modified_huber"}
+      - {name: "svm_hinge_adp_eta001_a1e-4", alpha: 1.0e-4, learning_rate: "adaptive", eta0: 0.01, loss: "hinge"}
+
+
